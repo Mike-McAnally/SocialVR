@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <title>VR Art Gallery</title>
+    <meta name="description" content="Social VR Art room Gallery.">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0, shrink-to-fit=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="gray-translucent" />
+
+    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+    <script src="https://rawgit.com/fernandojsg/aframe-teleport-controls/master/dist/aframe-teleport-controls.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.4.0/socket.io.slim.js"></script>
+    <script src="/easyrtc/easyrtc.js"></script>
+    <script src="/dist/networked-aframe.js"></script>
+    <script>
+      // see issue https://github.com/networked-aframe/networked-aframe/issues/267
+      NAF.schemas.getComponentsOriginal = NAF.schemas.getComponents;
+      NAF.schemas.getComponents = (template) => {
+        if (!NAF.schemas.hasTemplate('#avatar-template')) {
+          NAF.schemas.add({
+            template: '#avatar-template',
+            components: [
+              'position',
+              'rotation',
+              {
+                selector: '.head',
+                component: 'material',
+                property: 'color'
+              }
+            ]
+          });
+        }
+        const components = NAF.schemas.getComponentsOriginal(template);
+        return components;
+      };
+    </script>
+    <script src="https://unpkg.com/aframe-randomizer-components@^3.0.1/dist/aframe-randomizer-components.min.js"></script>
+    <script src="https://unpkg.com/aframe-environment-component@1.3.1/dist/aframe-environment-component.min.js"></script>
+    <script src="/js/spawn-in-circle.component.js"></script>
+
+    <!-- Fix for particle system with aframe 1.3.0 found here https://geeksrepos.com/IdeaSpaceVR/aframe-particle-system-component/issues/66  -->
+    <script src="js/aframe-particle-system-component.min.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="/css/style.css" />
+
+    <!-- Video Player Styling -->
+    <style type="text/css">
+      #video-permission {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: white;
+          z-index: 10000;
+          display: none;
+      }
+      #video-permission-button {
+        position: fixed;
+        top: calc(50% - 1em);
+        left: calc(50% - 60px);
+        width: 120px;
+        height: 2em;
+      }
+    </style>
+
+    <script type="text/javascript">
+
+      // Component to do on click.
+      AFRAME.registerComponent('click-listener', {
+        init: function () {
+
+            this.el.addEventListener('click', function (evt) {
+
+                // remove clicked object from view
+                //this.setAttribute('visible', false);
+      
+            });
+        }
+      });
+
+      // Handles activating and toggle on-off audio control for browser
+      AFRAME.registerComponent('audiohandler', {
+        init:function() {
+            let playing = false;
+            let audio = document.querySelector("#playAudio");
+            this.el.addEventListener('click', () => {
+
+                if(!playing) {
+                    audio.play();
+                } else {
+                    audio.pause();
+                    audio.currentTime = 0;
+                }
+                playing = !playing;
+            });
+        }
+      });
+
+    </script>
+
+  </head>
+  <body>
+    <div id="video-permission">
+      <button id="video-permission-button">Allow VR Video</button>
+    </div>
+    <button id="playButton" type="button">Play Sound</button>
+    <audio id="playAudio" autoplay loop>
+        <!-- <source src="assets/mp3/fountainWater.mp3" type="audio/mpeg">  -->
+    </audio>
+    <a-scene networked-scene="
+      room: ArtRoom;
+      debug: true;
+      adapter: easyrtc;
+      audio: true;
+      video: false;
+    " raycaster="objects: .raycastable, .clickable, a-link" shadow="type: pcfsoft" renderer="antialias: true; highRefreshRate: true" vr-mode-ui="arEnabled: false"> 
+      <a-assets >
+
+        <img crossorigin="anonymous" id="orb1" src="assets/img/skyland4.jpg">
+        <a-asset-item id="ArtRoom" src="assets/gltf/SimpleArtRoomPlus.glb" nav-agent="speed: 1.0; active: true"></a-asset-item>
+        <video crossorigin="anonymous" id="video-src" src="assets/video/beach.mp4"></video>
+        
+        <img crossorigin="anonymous" id="play" src="assets/img/playButton.png">
+        <img crossorigin="anonymous" id="pause" src="assets/img/pause.png">
+        <img crossorigin="anonymous" id="volume-normal" src="assets/img/volume-normal.png">
+        <img crossorigin="anonymous" id="volume-mute" src="assets/img/volume-mute.png">
+        <img crossorigin="anonymous" id="seek-back" src="assets/img/seek-back.png">
+
+        <img crossorigin="anonymous" id="artwork1" src="assets/artwork/00209fb1-64a2-4961-9ccc-8c6c06117df2.jpg">
+        <img crossorigin="anonymous" id="artwork2" src="assets/artwork/2430a030-7bcd-4433-a59e-91cfc9ead186.jpg">
+        <img crossorigin="anonymous" id="artwork3" src="assets/artwork/bfc54c5f-a5ea-4aca-9e8e-e2ff169c48b5.jpg">
+        <img crossorigin="anonymous" id="artwork4" src="assets/artwork/0eb6c68f-05bd-4413-8e51-9d1ac8769b48.jpg">
+        <img crossorigin="anonymous" id="artwork5" src="assets/artwork/bf35b647-0355-44d7-a684-5a193a937b9d.jpg">
+        <img crossorigin="anonymous" id="artwork6" src="assets/artwork/c020c6d4-357c-47a0-828e-3fc134f70c30.jpg">
+        <img crossorigin="anonymous" id="artwork7" src="assets/artwork/1050c145-2892-4679-be3f-43be5553a005.jpg">
+        <img crossorigin="anonymous" id="artwork8" src="assets/artwork/be827f4d-defa-4ebd-8fda-c73f4b4b0a15.jpg">
+        <img crossorigin="anonymous" id="artwork9" src="assets/artwork/0f9351ff-c4b8-46c7-9857-ac9f9e446c6f__640.jpg">
+        <img crossorigin="anonymous" id="artwork10" src="assets/artwork/c0ac4b13-b4df-4967-80bf-0293896b0d3d.jpg">
+        <img crossorigin="anonymous" id="artwork11" src="assets/artwork/c473f61b-acf3-4103-ab4e-3beae5d48ced__640.jpg">
+
+        <a-asset-item id="ShapeSculpture" src="assets/gltf/ShapesScuplture3.glb"></a-asset-item>
+
+        <a-mixin id="spin" animation="property: rotation; to: 0 360 0; loop: true; dur: 100000; easing: linear"></a-mixin>
+
+        <!-- Templates -->
+
+          <!-- As a substitution for a proper avatar we just use a robot head and hands for now --> 
+          <a-asset-item id="RobotHead" src="assets/gltf/avatarHead.glb"></a-asset-item>
+          <a-asset-item id="LHand" src="assets/gltf/leftHandLow.glb"></a-asset-item>
+          <a-asset-item id="RHand" src="assets/gltf/rightHandLow.glb"></a-asset-item>
+          <template id="avatar-template">
+              <a-entity networked-audio-source></a-entity>
+              </template>
+              <template id="head-template">
+                  <a-entity class="cam" gltf-model="#RobotHead" scale="1 1 1"></a-entity>
+              </template>
+              <template id="hand-left">
+                <a-entity class="leftController">
+                  <a-entity gltf-model="#LHand" ></a-entity>
+                </a-entity>
+              </template>
+              <template id="hand-right">
+                  <a-entity class="rightController">
+                    <a-entity gltf-model="#RHand" ></a-entity>
+              </a-entity>
+              </template>
+
+      </a-assets>
+
+      <a-entity id="mouseCursor" cursor="rayOrigin: mouse"></a-entity>
+
+      <!-- Basic movement and teleportation  -->
+      <a-entity id="cameraRig" movement-controls>
+        <a-entity
+          id="player"
+          networked="template:#avatar-template;attachTemplateToLocal:false;"
+          camera
+          position="0 1.6 0"
+          spawn-in-circle="radius:3"
+          wasd-controls
+          look-controls
+        >
+
+        <a-entity class="head" networked="template:#head-template;attachTemplateToLocal:false;" ></a-entity>
+
+        </a-entity>
+          <!-- Left Controller -->
+          <a-entity id="leftHand" hand-controls="hand: left; handModelStyle: lowPoly; color: #15ACCF" networked="template:#hand-left;attachTemplateToLocal:false;" teleport-controls="cameraRig: #cameraRig; teleportOrigin: #head; button: trigger; type: line; curveShootingSpeed: 10; landingMaxAngle: 60" visible="true"></a-entity>
+          <!-- Right Controller -->
+          <a-entity id="rightHand" hand-controls="hand: right; handModelStyle: lowPoly; color: #15ACCF" networked="template:#hand-right;attachTemplateToLocal:false;" laser-controls raycaster="showLine: true; far: 10; interval: 0; objects: .raycastable, .clickable, .fountian_ball, .cylinder4, a-link;" line="color: #7cfc00; opacity: 0.5" visible="true"></a-entity>
+      </a-entity>
+
+      <a-entity
+        id="background"
+        position="0 0 0"
+        geometry="primitive: sphere; radius: 2.0"
+        material="color: red; side: back; shader: flat"
+        scale="0.001 0.001 0.001"
+        visible="false" class="raycastable">
+      </a-entity>
+
+      <a-entity light="type: ambient; intensity: 0.85"></a-entity>
+
+      <a-sky id="orbSky" material="src: #orb1" rotation="0 0 0" ></a-sky>
+
+      <a-entity id="ArtGalleryRm" gltf-model="#ArtRoom" position="-3.46385 0 5.56352" rotation="0 0 0" scale="0.01 0.01 0.01" shadow=""></a-entity>
+
+      <a-sound id="alert-sound" src="src: url(assets/wav/action.wav)" autoplay="false" position="0 0 0"></a-sound>
+      <a-video id="video-screen" src="#video-src" position="3.13189 1.55443 -0.28064" rotation="0 -90 0" scale="0.50761 0.49394 1" width="8" height="4" rotation="0 0 0" visible="true"></a-video> 
+      <a-image class="clickable" id="control-back" width="0.4" height="0.4" src="#seek-back" position="3.12841 0.261 -0.85992" rotation="0 -90 0" visible="false" scale="0.85 0.85 0.85"></a-image>
+      <a-image class="clickable" id="control-play" width="0.4" height="0.4" src="#play" position="3.12841 0.261 -0.38565" rotation="0 -90 0"></a-image>
+      <a-image class="clickable" id="control-volume" width="0.4" height="0.4" src="#volume-mute" position="3.12841 0.261 0.090" rotation="0 -90 0" visible="false" scale="0.75 0.75 0.75"></a-image>
+      <a-entity id="progress-bar" geometry="primitive:plane;height:0.1;width:4" material="opacity:0;transparent:true" position="3.06712 0.514 -0.277" rotation="0 -90 0" visible="false" >
+      <a-plane id="progress-bar-track" width="4" height="0.1" color="gray" position="" opacity="0.2" material="" visible="false" geometry=""></a-plane>
+      <a-plane id="progress-bar-fill" width="4" height="0.1" color="#7198e5" position="" geometry="" visible="false" material=""></a-plane>
+      </a-entity>
+
+      <a-plane id="artworkPosition1" class="clickable" position="-3.098 1.64293 -2.59669" rotation="0 90 0" material="src: #artwork1; color: white; transparent: true; side: double" geometry="" onclick="location.href='https://www.nga.gov/open-access-images/open-data.html';" cursor-listener></a-plane>
+      
+      <a-entity id="Lettering1" text="value: Title: Name of artwork; " position="-3.07621 1.036 -2.867" rotation="-0.04 89.71 0.099"></a-entity>
+
+      <a-plane id="artworkPosition2" class="clickable" position="-3.098 1.64293 2.10722" rotation="0 90 0" material="src: #artwork2; color: white; transparent: true; side: double" geometry="" onclick="location.href='https://www.nga.gov/open-access-images/open-data.html';" cursor-listener></a-plane>
+
+      <a-entity id="Lettering2" text="value: Title: Name of artwork; " position="-3.07621 1.036 1.800" rotation="-0.04 89.71 0.099"></a-entity>
+
+      <a-plane id="artworkPosition3" class="clickable" position="-3.098 1.64293 -0.221" rotation="0 90 0" material="src: #artwork3; color: white; transparent: true; side: double" geometry="" onclick="location.href='https://www.nga.gov/open-access-images/open-data.html';" cursor-listener></a-plane>
+
+      <a-entity id="Lettering3" text="value: Title: Name of artwork; " position="-3.07621 1.036 -0.502" rotation="-0.04 89.71 0.099"></a-entity>
+
+      <a-plane id="artworkPosition4" class="clickable" position="-1.82195 1.64293 -5.79314" rotation="0 0 0" material="src: #artwork4; color: white; transparent: true; side: double" geometry="" onclick="location.href='https://www.nga.gov/open-access-images/open-data.html';" cursor-listener></a-plane>
+
+      <a-entity id="Lettering4" text="value: Title: Name of artwork; " position="-1.559 1.036 -5.793" rotation="0 0 0"></a-entity>
+
+      <a-plane id="artworkPosition5" class="clickable" position="0.04047 1.63458 -5.79314" rotation="0 0 0" material="src: #artwork5; color: white; transparent: true; side: double" geometry="" onclick="location.href='https://www.nga.gov/open-access-images/open-data.html';" cursor-listener></a-plane>
+
+      <a-entity id="Lettering5" text="value: Title: Name of artwork; " position="0.319 1.036 -5.793" rotation="0 0 0"></a-entity>
+
+      <a-plane id="artworkPosition6" class="clickable" position="-0.02502 1.643 5.134" rotation="0 180 0" material="src: #artwork6; color: white; transparent: true; side: double" geometry="" onclick="location.href='https://www.nga.gov/open-access-images/open-data.html';" cursor-listener></a-plane>
+
+      <a-entity id="Lettering6" text="value: Title: Name of artwork; " position="-0.322 1.036 5.134" rotation="0 180 0"></a-entity>
+
+      <a-plane id="artworkPosition7" position="-1.91195 1.64293 5.134" rotation="0 180 0" material="src: #artwork7; color: white; transparent: true; side: double" geometry="" onclick="location.href='https://www.nga.gov/open-access-images/open-data.html';" cursor-listener></a-plane>
+
+      <a-entity id="Lettering7" text="value: Title: Name of artwork; " position="-2.182 1.036 5.134" rotation="0 180 0"></a-entity>
+
+      <a-plane id="artworkPosition8" class="clickable" position="-3.098 1.64293 -4.52681" rotation="0 90 0" material="src: #artwork8; color: white; transparent: true; side: double" geometry="" onclick="location.href='https://www.nga.gov/open-access-images/open-data.html';" cursor-listener></a-plane>
+
+      <a-entity id="Lettering8" text="value: Title: Name of artwork; " position="-3.07621 1.036 -4.794" rotation="-0.04 89.71 0.099"></a-entity>
+
+      <a-plane id="artworkPosition9" class="clickable" position="1.93337 1.643 5.134" rotation="0 180 0" material="src: #artwork9; color: white; transparent: true; side: double" geometry="" onclick="location.href='https://www.nga.gov/open-access-images/open-data.html';" cursor-listener></a-plane>
+
+      <a-entity id="Lettering9" text="value: Title: Name of artwork; " position="1.670 1.036 5.134" rotation="0 180 0"></a-entity>
+
+      <a-plane id="artworkPosition10" class="clickable" position="1.95354 1.64293 -5.79314" rotation="0 0 0" material="src: #artwork10; color: white; transparent: true; side: double" geometry="" onclick="location.href='https://www.nga.gov/open-access-images/open-data.html';" cursor-listener></a-plane>
+
+      <a-entity id="Lettering10" text="value: Title: Name of artwork; " position="2.268 1.036 -5.793" rotation="0 0 0"></a-entity>
+
+      <a-plane id="artworkPosition11" class="clickable" position="-3.09837 1.64293 4.15322" rotation="0 90 0" material="src: #artwork11; color: white; transparent: true; side: double" geometry="" onclick="location.href='https://www.nga.gov/open-access-images/open-data.html';" cursor-listener></a-plane>
+
+      <a-entity id="Lettering11" text="value: Title: Name of artwork; " position="-3.07621 1.08439 3.896" rotation="-0.04 89.71 0.099"></a-entity>
+
+      <a-entity id="ArtSpot" position="-2.47625 1.55934 -0.1849" rotation="-5.6573852691217485 105.07473004904168 -100.89328406017692" light="angle: 100; decay: 0.8; distance: 1.5; type: spot; intensity: 0.6"></a-entity>
+
+      <a-entity id="ArtSpot2" position="-0.01501 1.645 4.11144" rotation="-5.6573852691217485 -179.6560732834258 -100.89328406017692" light="angle: 100; decay: 0.8; distance: 1.5; type: spot; intensity: 0.6"></a-entity>
+
+      <a-entity id="ArtSpot3" position="0.03346 1.53713 -4.76339" rotation="-3.8204825779323293 -4.857536187119119 64.9986241108211" light="angle: 100; decay: 0.8; distance: 1.5; type: spot; intensity: 0.6"></a-entity>
+
+      <a-entity id="ArtSpot4" position="-2.0022 1.61579 2.0911" rotation="-5.657385269121749 105.07473004904168 -100.89328406017692" light="angle: 100; decay: 0.8; distance: 1.5; type: spot; intensity: 0.6"></a-entity>
+
+      <a-entity id="ArtSpot5" position="-2.0022 1.61579 -2.57597" rotation="-5.657385269121749 105.07473004904168 -100.89328406017692" light="angle: 100; decay: 0.8; distance: 1.5; type: spot; intensity: 0.6"></a-entity>
+
+      <a-entity id="modelSculpture" class="clickable" position="-0.06967 1.423 -1.93223" rotation="0 0 0" scale="0.0001 0.0001 0.0001" gltf-model="#ShapeSculpture" mixin="spin" shadow="recieve: false; cast: true" onclick="location.href='https://funbit64.com/node/23';" cursor-listener></a-entity>
+      <a-cylinder id="cylinder3" position="-0.06967 0.52434 -1.93223" radius="0.5" height="1.5" scale=".7 0.660 .7" color="#808080" shadow></a-cylinder>
+      <a-entity id="SculptureSpot" position="-0.06967 1.967 -1.93223" rotation="-88.61766329949904 -119.47201352508898 123.77091586195557" light="angle: 75; decay: 0.7; distance: 1.5; type: spot; intensity: 0.7"></a-entity>
+
+      <a-entity id="Lettering12" text="value: Title: Geometry Flower; " position="0.208 1.02242 -1.915" rotation="-90 90 -90"></a-entity>
+
+
+    </a-scene>
+
+    <div class="actions">
+      <button id="mic-btn" type="button" class="button">Mute Mic</button>
+    </div> 
+
+    <script>
+      // Mic status
+      let micEnabled = true;
+      // Mic button element
+      const micBtnEle = document.getElementById('mic-btn');
+
+      // Called by Networked-Aframe when connected to server
+      function onConnect() {
+        console.log('onConnect', new Date());
+
+        // Handle mic button click (Mute and Unmute)
+        micBtnEle.addEventListener('click', function () {
+          NAF.connection.adapter.enableMicrophone(!micEnabled);
+          micEnabled = !micEnabled;
+          micBtnEle.textContent = micEnabled ? 'Mute Mic' : 'Unmute Mic';
+        });
+      }
+
+      window.onload = function() {
+        var context = new AudioContext();
+      }
+
+      document.querySelector('button').addEventListener('click', function() {
+        context.resume().then(() => {
+        console.log('Playback resumed successfully');
+        });
+      });
+      
+      //Videio Player    
+      var AVideoPlayer = function() {
+      // Vals
+      this.duration         = 0;
+      this.current_progress = 0;
+      this.progressWidth    = 4;
+      this.paused           = true;
+      // Elems
+      this.elProgressBar   = null;
+      this.elProgressTrack = null;
+      this.elProgressFill  = null;
+      this.elAlertSound    = null;
+      this.elVideo         = null;
+      this.elVideoScreen   = null;
+      this.elControlBack   = null;
+      this.elControlPlay   = null;
+      this.elControlVolume = null;
+      this._initElements = function() {
+        this.elProgressBar   = document.getElementById('progress-bar');
+        this.elProgressTrack = document.getElementById('progress-bar-track');
+        this.elProgressFill  = document.getElementById('progress-bar-fill');
+        this.elAlertSound    = document.getElementById('alert-sound');
+        this.elVideo         = document.getElementById('video-src');
+        this.elVideoScreen   = document.getElementById('video-screen');
+        this.elControlBack   = document.getElementById('control-back');
+        this.elControlPlay   = document.getElementById('control-play');
+        this.elControlVolume = document.getElementById('control-volume');
+      }
+      /**
+      * PROGRESS
+      */
+      this.setProgress = function(progress) {
+        var new_progress = this.progressWidth*progress;
+        this._setProgressWidth(new_progress);
+        var progress_coord = this._getProgressCoord();
+        if (progress_coord != undefined) {
+         progress_coord.x = -(this.progressWidth-new_progress)/2;
+         this._setProgressCoord(progress_coord);
+        }
+      }
+      this._getProgressCoord = function() {
+        return AFRAME.utils.coordinates.parse(this.elProgressFill.getAttribute("position"))
+      }
+      this._getProgressWidth = function() {
+        return parseFloat(this.elProgressFill.getAttribute("width"));
+      }
+      this._setProgressCoord = function(coord) {
+        this.elProgressFill.setAttribute("position", coord);
+      }
+      this._setProgressWidth = function(width) {
+        this.elProgressFill.setAttribute("width", width);
+      }
+      /*
+      * UI SETTERS
+      */
+      this.isProgressBarVisible = function(isVisible) {
+        this.elProgressTrack.setAttribute("visible", isVisible);
+        this.elProgressFill.setAttribute("visible", isVisible);
+      }
+      this.isControlVisible = function(isVisible) {
+        this.elControlBack.setAttribute("visible", isVisible);
+        this.elControlVolume.setAttribute("visible", isVisible);
+        this.elVideoScreen.setAttribute("visible", isVisible);
+      }
+      /*
+      * EVENTS
+      */
+      this._addPlayerEvents = function() {
+        var that = this;
+        this.elVideo.pause();
+        this.elVideo.onplay = function() {
+          that.duration = this.duration;
+        }
+        this.elVideo.ontimeupdate = function() {
+          if (that.duration > 0) {
+            that.current_progress = this.currentTime/that.duration;
+          }
+          that.setProgress(that.current_progress);
+        }
+      }
+      this._addControlsEvent = function() {
+        var that = this;
+        this.elControlPlay.addEventListener('click', function () {
+          that._playAudioAlert();
+          if (that.elVideo.paused) {
+            this.setAttribute('src', '#pause');
+            that.elVideo.play();
+            that.paused = false;
+            that.isProgressBarVisible(true);
+            that.isControlVisible(true);
+          } else {
+            this.setAttribute('src', '#play');
+            that.elVideo.pause();
+            that.paused = true;
+            that.isProgressBarVisible(false);
+            that.isControlVisible(false);
+         }
+        });
+        this.elControlVolume.addEventListener('click', function () {
+          that._playAudioAlert();
+          if (that.elVideo.muted) {
+            that.elVideo.muted = false;
+            this.setAttribute('src', '#volume-normal');
+          } else {
+            that.elVideo.muted = true;
+            this.setAttribute('src', '#volume-mute');
+          }
+        });
+        this.elControlBack.addEventListener('click', function () {
+          that._playAudioAlert();
+          that.elVideo.currentTime = 0;
+        });
+      }
+      this._addProgressEvent = function() {
+        var that = this;
+        this.elProgressBar.addEventListener('click', function (e) {
+          if (e.detail == undefined || e.detail.intersection == undefined || that.duration === 0) {
+            return;
+          }
+          let seekedPosition = (e.detail.intersection.point.x+(that.progressWidth/2))/that.progressWidth;
+          try {
+            let seekedTime = seekedPosition*that.duration;
+            that.elVideo.currentTime = seekedTime;
+          } catch (e) {
+          }
+        });
+      }
+      this._playAudioAlert = function() {
+        if (this.elAlertSound.components !== undefined && this.elAlertSound.components.sound !== undefined) {
+         this.elAlertSound.components.sound.playSound();
+        }
+      }
+      /**
+      * MOBILE PATCH TO PLAY VIDEO
+      */
+      this._mobileFriendly = function() {
+        if (AFRAME.utils.device.isMobile()) {
+          var that = this;
+          let video_permission        = document.getElementById('video-permission');
+         let video_permission_button = document.getElementById('video-permission-button');
+          video_permission.style.display = 'block';
+          video_permission_button.addEventListener("click", function() {
+            video_permission.style.display = 'none';
+            that.elVideo.play();
+            that.elVideo.pause();
+          }, false);
+        }
+      }
+      this.init = function() {
+        this._initElements();
+        //this._determinateProgressWidth();
+        this.setProgress(this.current_progress);
+        this._addPlayerEvents();
+        this._addControlsEvent();
+        this._addProgressEvent();
+        this._mobileFriendly();
+      }
+      this.init();
+    }
+      let scene = document.querySelector('a-scene');
+      var cursor = document.querySelector('a-cursor');
+      /**
+      * CINEMA MODE
+      */
+      scene.lightOff = function() {
+        scene.islightOn = true;
+        scene.removeAttribute('animation__fogback');
+        scene.setAttribute('animation__fog', "property: fog.color; to: #0c192a; dur: 800; easing: easeInQuad;");
+      }
+      scene.lightOn = function() {
+        scene.islightOn = false;
+        scene.removeAttribute('animation__fog');
+        scene.setAttribute('animation__fogback', "property: fog.color; to: #dbdedb; dur: 800");
+      }
+      /**
+      * AVideoPlayer
+      */
+      var videoPlayer = new AVideoPlayer();
+      document.querySelector('#control-play').addEventListener('click', function () {
+        if (videoPlayer.paused) {
+          scene.lightOn()
+        } else {
+          scene.lightOff();
+        }
+      });
+
+    </script>
+  </body>
+</html>
