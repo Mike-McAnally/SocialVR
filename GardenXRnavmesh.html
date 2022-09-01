@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <title>Hexoplex Simple Navmesh</title>
+    <meta name="description" content="Multi-user Social VR two level garden building scene, with positional audio using Networked-Aframe. Combines avatar, movement, teleport, selection, simple-navmesh and particle system.">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0, shrink-to-fit=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="gray-translucent" />
+
+
+    <!-- the AFrame library and 3rd party components -->
+
+    <script src="https://cdn.jsdelivr.net/gh/aframevr/aframe@0d23f9b/dist/aframe-master.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/aframe-environment-component@1.3.1/dist/aframe-environment-component.min.js"></script>
+
+    <script src="https://recast-api.donmccurdy.com/aframe-inspector-plugin-recast.js"></script>
+
+  </head>
+
+  <body>
+
+    <a-scene inspector-plugin-recast>
+    
+      <a-assets>
+         <a-asset-item id="MeetingComplex1" src="assets/gltf/HexRoomMosaicA.glb"></a-asset-item>
+         <a-asset-item id="MeetingComplex2" src="assets/gltf/HexRoomMosaicD.glb"></a-asset-item>
+         <a-asset-item id="MeetingComplex3" src="assets/gltf/HexRoomMosaicC.glb"></a-asset-item>
+
+
+         <a-asset-item id="Tree1" src="assets/gltf/NormalTree_1.glb"></a-asset-item>
+         <a-asset-item id="Tree2" src="assets/gltf/NormalTree_2.glb"></a-asset-item>
+        
+         <a-asset-item id="Bush_Flowers2" src="assets/gltf/Bush_Flowers2.glb"></a-asset-item>
+
+
+
+
+
+
+          <a-asset-item id="Table1" src="assets/gltf/tableFixed14.glb"></a-asset-item>
+
+
+
+
+
+      </a-assets>
+
+
+
+      <a-entity position="0 0.085 0" environment="preset: forest; playArea: 1.2; dressingAmount: 250; dressingUniformScale: true; dressingColor: #248728; ground: hills; groundTexture: none; groundColor: #34711C; groundColor2: #319D06; grid: none; gridColor: #81F995; skyType: gradient; skyColor: #A4CFFA; horizonColor: #95C8FA; fog: .75" shadow="receive: true" active="false" visible="true"></a-entity>
+
+      <a-entity id="MeetingBuildings1" gltf-model="#MeetingComplex1" position="-1.17637 0.033 14.73588" rotation="0 0 0" scale="0.02 0.02 0.02" shadow="cast: true; receive: false;" ></a-entity>
+      <a-entity id="MeetingBuildings2" gltf-model="#MeetingComplex2" position="11.83198 0.033 -9.19739" rotation="0 120 0" scale="0.02 0.02 0.02" shadow="cast: true; receive: false;" ></a-entity>
+      <a-entity id="MeetingBuildings3" gltf-model="#MeetingComplex3" position="-14.30592 0.033 -9.21925" rotation="0 -120 0" scale="0.02 0.02 0.02" shadow="cast: true; receive: false;" ></a-entity>
+
+
+      <a-entity id="NormalTree1" gltf-model="#Tree1" position="7.65583 -0.0164 4.18549" scale="0.01 0.01 0.01" rotation="-180.000 45 -180.000" shadow="receive: false"></a-entity>
+      <a-entity id="NormalTree2" gltf-model="#Tree2" position="-10.17978 -0.0164 3.90463" scale="0.01 0.01 0.01" rotation="-180.000 93.153 -180.000" shadow="receive: false"></a-entity>
+      <a-entity id="NormalTree3" gltf-model="#Tree1" position="-0.880 -0.016 -13.695" scale="0.01 0.01 0.01" rotation="-180.000 0 -180.000" shadow="receive: false"></a-entity>
+      <a-entity id="Bush_Flowers1" gltf-model="#Bush_Flowers2" position="-5.63281 0.03739 3.07624" scale="0.01 0.01 0.01" shadow="receive: false"></a-entity>
+      <a-entity id="Bush_Flowers2" gltf-model="#Bush_Flowers2" position="2.18231 0.03739 3.51312" scale="0.01 0.01 0.01" shadow="receive: false"></a-entity>
+      <a-entity id="Bush_Flowers3" gltf-model="#Bush_Flowers2" position="-1.15672 0.03739 -4.37366" scale="0.01 0.01 0.01" shadow="receive: false"></a-entity>
+
+
+      <a-cylinder id="cylinder4" position="-1.03368 0.790 0.46317" scale="0.629 0.950 0.629" radius="0.5" height="1.5" color="#E3E3E3" shadow="" material="" geometry="" shadow="receive: true; cast: true" ></a-cylinder>
+
+
+
+      <a-box id="hex-ramp" position="-14.23136 3.50576 14.76367" rotation="-60 -90 -90" scale="3.58635 0.868 0.143" width="4" height="4" color="#FFFFFF" shadow="" material="" geometry="" opacity=".35"></a-box>
+      <a-box id="hex-between1" position="5.37633 7.06669 2.78422" rotation="-90 -120 0" scale="3.38436 0.868 0.143" width="4" height="4" color="#FFFFFF" shadow="" material="" geometry="" opacity=".35"></a-box>
+      <a-box id="hex-between2" position="-1.238 7.06659 -9.05965" rotation="-90 -180 0" scale="3.30512 0.868 0.143" width="4" height="4" color="#FFFFFF" shadow="" material="" geometry="" opacity=".35"></a-box>
+
+
+
+
+      <!-- <a-entity id="MeetingTable" gltf-model="#Table1" position="-14.32485 0.189 -9.118" rotation="0 -180 0" scale="0.000075 0.000035 0.000075" shadow="" visible=""></a-entity> -->
+
+
+
+    </a-scene>
+
+  </body>
+</html>
