@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <title>Hexoplex -Park Garden Complex</title>
+    <meta name="description" content="Basic multi-user Social VR scene example with positional audio using Networked-Aframe.">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0, shrink-to-fit=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="gray-translucent" />
+
+    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+    <script src="https://rawgit.com/fernandojsg/aframe-teleport-controls/master/dist/aframe-teleport-controls.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.4.0/socket.io.slim.js"></script>
+    <script src="/easyrtc/easyrtc.js"></script>
+    <script src="/dist/networked-aframe.js"></script>
+    <script>
+      // see issue https://github.com/networked-aframe/networked-aframe/issues/267
+      NAF.schemas.getComponentsOriginal = NAF.schemas.getComponents;
+      NAF.schemas.getComponents = (template) => {
+        if (!NAF.schemas.hasTemplate('#avatar-template')) {
+          NAF.schemas.add({
+            template: '#avatar-template',
+            components: [
+              'position',
+              'rotation',
+              {
+                selector: '.head',
+                component: 'material',
+                property: 'color'
+              }
+            ]
+          });
+        }
+        const components = NAF.schemas.getComponentsOriginal(template);
+        return components;
+      };
+    </script>
+    <script src="https://unpkg.com/aframe-randomizer-components@^3.0.1/dist/aframe-randomizer-components.min.js"></script>
+    <script src="https://unpkg.com/aframe-environment-component@1.3.1/dist/aframe-environment-component.min.js"></script>
+    <script src="/js/spawn-in-circle.component.js"></script>
+
+    <!-- Fix for particle system with aframe 1.3.0 found here https://geeksrepos.com/IdeaSpaceVR/aframe-particle-system-component/issues/66  -->
+    <script src="js/aframe-particle-system-component.min.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="/css/style.css" />
+
+    <script type="text/javascript">
+
+      // Component to do on click.
+      AFRAME.registerComponent('click-listener', {
+        init: function () {
+
+            this.el.addEventListener('click', function (evt) {
+
+                // remove clicked object from view
+                //this.setAttribute('visible', false);
+      
+            });
+        }
+      });
+
+      // Handles activating and toggle on-off audio control for browser
+      AFRAME.registerComponent('audiohandler', {
+        init:function() {
+            let playing = false;
+            let audio = document.querySelector("#playAudio");
+            this.el.addEventListener('click', () => {
+
+                if(!playing) {
+                    audio.play();
+                } else {
+                    audio.pause();
+                    audio.currentTime = 0;
+                }
+                playing = !playing;
+            });
+        }
+      });
+
+    </script>
+
+  </head>
+  <body>
+    <button id="playButton" type="button">Play Sound</button>
+    <audio id="playAudio" autoplay loop>
+        <source src="assets/mp3/fountainWater.mp3" type="audio/mpeg">
+    </audio>
+    <a-scene
+      networked-scene="
+      room: basicNAF;
+      debug: true;
+      adapter: easyrtc;
+      audio: true;
+    "
+    raycaster="objects: .raycastable, .clickable, .fountian_ball, .cylinder4, a-link" shadow="type: pcfsoft" renderer="antialias: true; highRefreshRate: true" vr-mode-ui="arEnabled: false">
+      <a-assets>
+        
+         <!-- Hex Rooms -->
+         <a-asset-item id="MeetingComplex1" src="assets/gltf/HexRoomMosaicA.glb" nav-agent="speed: 1.0; active: true"></a-asset-item>
+         <a-asset-item id="MeetingComplex2" src="assets/gltf/HexRoomMosaicD.glb" nav-agent="speed: 1.0; active: true"></a-asset-item>
+         <a-asset-item id="MeetingComplex3" src="assets/gltf/HexRoomMosaicC.glb" nav-agent="speed: 1.0; active: true"></a-asset-item>
+
+        <!-- Tree models -3D GltF models -->
+        <a-asset-item id="Tree1" src="assets/gltf/NormalTree_1.glb"></a-asset-item>
+        <a-asset-item id="Tree2" src="assets/gltf/NormalTree_2.glb"></a-asset-item>
+        
+        <a-asset-item id="Bush_Flowers2" src="assets/gltf/Bush_Flowers2.glb"></a-asset-item>
+        <a-asset-item id="Grass" src="assets/gltf/Grass.glb"></a-asset-item>
+
+        <!-- Templates -->
+
+          <!-- As a substitution for a proper avatar we just use a robot head and hands for now --> 
+          <a-asset-item id="RobotHead" src="assets/gltf/avatarHead.glb"></a-asset-item>
+          <a-asset-item id="LHand" src="assets/gltf/leftHandLow.glb"></a-asset-item>
+          <a-asset-item id="RHand" src="assets/gltf/rightHandLow.glb"></a-asset-item>
+          <template id="avatar-template">
+              <a-entity networked-audio-source></a-entity>
+              </template>
+              <template id="head-template">
+                  <a-entity class="cam" gltf-model="#RobotHead" scale="1 1 1"></a-entity>
+              </template>
+              <template id="hand-left">
+                <a-entity class="leftController">
+                  <a-entity gltf-model="#LHand" ></a-entity>
+                </a-entity>
+              </template>
+              <template id="hand-right">
+                  <a-entity class="rightController">
+                    <a-entity gltf-model="#RHand" ></a-entity>
+              </a-entity>
+              </template>
+      </a-assets>
+
+      <a-entity id="mouseCursor" cursor="rayOrigin: mouse"></a-entity>
+      
+      <!-- Basic movement and teleportation  -->
+      <a-entity id="cameraRig" movement-controls>
+        <a-entity
+          id="player"
+          networked="template:#avatar-template;attachTemplateToLocal:false;"
+          camera
+          position="0 1.6 0"
+          spawn-in-circle="radius:3"
+          wasd-controls
+          look-controls
+        >
+
+        <a-entity class="head" networked="template:#head-template;attachTemplateToLocal:false;" ></a-entity>
+
+        </a-entity>
+          <!-- Left Controller -->
+          <a-entity id="leftHand" hand-controls="hand: left;" networked-hand-controls="template:#hand-left; handModelStyle: lowPoly; color: #15ACCF" teleport-controls="cameraRig: #cameraRig; teleportOrigin: #head; button: trigger; type: line; curveShootingSpeed: 10; landingMaxAngle: 60" visible="true"></a-entity>
+          <!-- Right Controller -->
+          <a-entity id="rightHand" hand-controls="hand: right;" networked-hand-controls="template:#hand-right; handModelStyle: lowPoly; color: #15ACCF" laser-controls raycaster="showLine: true; far: 10; interval: 0; objects: .raycastable, .clickable, .fountian_ball, .cylinder4, a-link;" line="color: #7cfc00; opacity: 0.5" visible="true"></a-entity>
+      </a-entity>
+
+      <!-- Our Environment  -->
+      <a-entity id="parkland" environment="preset: forest; playArea: 1.2; dressingAmount: 250; dressingUniformScale: true; dressingColor: #248728; ground: hills; groundTexture: none; groundColor: #34711C; groundColor2: #319D06; grid: none; gridColor: #81F995; skyType: gradient; skyColor: #A4CFFA; horizonColor: #95C8FA; fog: .75" shadow="receive: true" active="false" visible="false"></a-entity>
+      <a-entity light="type: ambient; intensity: 0.47"></a-entity>
+
+      <!-- A light in the scene casting shadows -->
+      <a-entity id="lightshadow" light="intensity: 0.25; castShadow: true; shadowCameraLeft: -50; shadowCameraBottom: -50; shadowCameraRight: 50; shadowCameraTop: 50; shadowCameraVisible: false" position="-11.13389 32.24407 -0.84779"></a-entity>
+
+      <!-- Hex Buildings -->
+      <a-entity id="MeetingBuildings1" gltf-model="#MeetingComplex1" position="-1.17637 0.033 14.73588" rotation="0 0 0" scale="0.02 0.02 0.02" shadow="" ></a-entity>
+      <a-entity id="MeetingBuildings2" gltf-model="#MeetingComplex2" position="11.83198 0.033 -9.19739" rotation="0 119.99999999999999 0" scale="0.02 0.02 0.02" shadow="" ></a-entity>
+      <a-entity id="MeetingBuildings3" gltf-model="#MeetingComplex3" position="-14.30592 0.033 -9.21925" rotation="0 -120 0" scale="0.02 0.02 0.02" shadow="" ></a-entity>
+
+      <!-- Create a basic water fountain out of geometric shapes -->
+      <a-cylinder id="cylinder1" position="-1.03368 0.085 0.46317" scale="1.372 0.113 1.372" radius="0.5" height="1.5" color="#E3E3E3" shadow="" material="" geometry="" shadow="receive: true; cast: true"></a-cylinder>
+      <a-cylinder id="cylinder2" position="-1.03368 0.020 0.46317" scale="4.331 -0.011 4.331" radius="0.5" height="1.5" color="#E3E3E3" shadow="" material="" geometry="" shadow="receive: false; cast: true"></a-cylinder>
+      <a-cylinder id="cylinder3" position="-1.03368 0.033 0.46317" scale="4.086 0.113 4.086" radius="0.5" height="1.5" color="#18C7D2" shadow="" material="" geometry="" opacity=".35" shadow="receive: false; cast: true"></a-cylinder>
+      <a-cylinder id="cylinder4" position="-1.03368 0.790 0.46317" scale="0.629 0.950 0.629" radius="0.5" height="1.5" color="#E3E3E3" shadow="" material="" geometry="" shadow="receive: true; cast: true"  audiohandler></a-cylinder>
+      <a-sphere id="fountian_ball" class="clickable" position="-1.03368 1.64705 0.46317" scale="0.363 0.363 0.363" radius="0.5" height="1.5" color="#E3E3E3" shadow="" material="" geometry="" shadow="receive: true; cast: true"  audiohandler></a-sphere>
+      <a-torus position="-1.03368 0.00369 0.46317" rotation="-90 90 -90" color="#E3E3E3" radius="5" radius-tubular="0.1" material="" geometry="radius: 2" shadow="receive: true; cast: true"></a-torus>
+      <!-- water  -->
+      <a-entity id="water" position="-1.03368 1.629 0.46317" particle-system="color:#000, #FFF;duration:NaN;velocitySpread:2 3 2;velocityValue:0 9 0;accelerationSpread:1 0 1;particleCount:25;maxAge:1.2;texture: https://funbit64.com:3025/assets/img/dot2.png" visible="true"></a-entity>
+
+      <!-- Garden objects -->
+      <a-entity id="NormalTree1" gltf-model="#Tree1" position="7.65583 -0.0164 4.18549" scale="0.01 0.01 0.01" rotation="-180.000 45 -180.000" shadow="receive: false"></a-entity>
+      <a-entity id="NormalTree2" gltf-model="#Tree2" position="-10.17978 -0.0164 3.90463" scale="0.01 0.01 0.01" rotation="-180.000 93.153 -180.000" shadow="receive: false"></a-entity>
+      <a-entity id="NormalTree1" gltf-model="#Tree1" position="-0.880 -0.016 -13.695" scale="0.01 0.01 0.01" rotation="-180.000 0 -180.000" shadow="receive: false"></a-entity>
+      <a-entity id="Bush_Flowers2" gltf-model="#Bush_Flowers2" position="-4.683 0.03739 3.07624" scale="0.01 0.01 0.01" shadow="receive: false"></a-entity>
+      <a-entity id="Bush_Flowers2" gltf-model="#Bush_Flowers2" position="2.18231 0.03739 3.51312" scale="0.01 0.01 0.01" shadow="receive: false"></a-entity>
+      <a-entity id="Bush_Flowers2" gltf-model="#Bush_Flowers2" position="-1.15672 0.03739 -4.03872" scale="0.01 0.01 0.01" shadow="receive: false"></a-entity>
+      <a-entity id="Grass_Clump1" gltf-model="#Grass" position="-1.00962 0.03739 1.71005" rotation="0 -34.903 0" scale="0.01 0.01 0.01" shadow="receive: false"></a-entity>
+      <a-entity id="Grass_Clump2" gltf-model="#Grass" position="6.81458 0.03739 4.67095" scale="0.01 0.01 0.01" shadow="receive: false"></a-entity>
+      <a-entity id="Grass_Clump3" gltf-model="#Grass" position="-10.79057 0.03739 3.55366" scale="0.01 0.01 0.01" shadow="receive: false"></a-entity>
+
+    </a-scene>
+
+    <div class="actions">
+      <button id="mic-btn" type="button" class="button">Mute Mic</button>
+    </div>
+
+    <script>
+      // Mic status
+      let micEnabled = true;
+      // Mic button element
+      const micBtnEle = document.getElementById('mic-btn');
+
+      // Called by Networked-Aframe when connected to server
+      function onConnect() {
+        console.log('onConnect', new Date());
+
+        // Handle mic button click (Mute and Unmute)
+        micBtnEle.addEventListener('click', function () {
+          NAF.connection.adapter.enableMicrophone(!micEnabled);
+          micEnabled = !micEnabled;
+          micBtnEle.textContent = micEnabled ? 'Mute Mic' : 'Unmute Mic';
+        });
+      }
+
+      window.onload = function() {
+        var context = new AudioContext();
+      }
+
+      document.querySelector('button').addEventListener('click', function() {
+        context.resume().then(() => {
+        console.log('Playback resumed successfully');
+        });
+      });
+      
+    </script>
+  </body>
+</html>
