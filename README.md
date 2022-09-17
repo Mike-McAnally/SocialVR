@@ -6,3 +6,5 @@ Social VR book working example links
 <a href="https://funbit64.com:3025/GardenXR.html">GardenXR.html</a>
 
 <a href="https://funbit64.com:3025/Tisland.html">Tisland.html</a>
+
+<a href="https://funbit64.com:3025/IslandThemed.html">IslandThemed.html</a>
